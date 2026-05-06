@@ -2,6 +2,7 @@ services:
   - type: web
     name: security-scanner-backend
     runtime: node
+    plan: free
     rootDir: backend
     buildCommand: npm install
     startCommand: npm start
@@ -20,6 +21,7 @@ services:
   - type: web
     name: security-scanner-frontend
     runtime: node
+    plan: free
     rootDir: frontend
     buildCommand: npm install && npm run build
     startCommand: npm start
