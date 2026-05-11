@@ -2,10 +2,27 @@ import axios from 'axios';
 
 const api = axios.create({
   baseURL: '/api',
-  timeout: 30000,
+  timeout: 90000, // 90s — allows for Render free-tier cold starts
   headers: {
     'Content-Type': 'application/json',
   },
+});
+
+// Retry interceptor — automatically retries on network/timeout errors (cold start resilience)
+api.interceptors.response.use(undefined, async (error) => {
+  const config = error.config;
+  if (!config || config.__retryCount >= 2) return Promise.reject(error);
+
+  const isRetryable =
+    error.code === 'ECONNABORTED' ||          // timeout
+    error.code === 'ERR_NETWORK' ||            // network error
+    (error.response && error.response.status >= 500); // server error
+
+  if (!isRetryable) return Promise.reject(error);
+
+  config.__retryCount = (config.__retryCount || 0) + 1;
+  await new Promise((r) => setTimeout(r, 2000)); // wait 2s before retry
+  return api(config);
 });
 
 /**
